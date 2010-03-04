@@ -1,0 +1,5 @@
+make work on cygwin
+something like -d, to delete after wards again (opposite of -c) (implies -f mode)
+make it integrateable with "file exists" locks, which means an option as opposite of -c is needes which makes sure the file doesn't exist
+
+make timeout on locking possibe (inbetween -n and not -n)

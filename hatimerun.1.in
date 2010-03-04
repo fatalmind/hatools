@@ -1,0 +1,133 @@
+.\" $Id$
+.TH hatimerun 1 "$Date$" "V@VERSION@" "HA-Tools"
+.SH NAME
+hatimerun \- Run command with a timeout.
+.SH SYNOPSIS
+.B hatimerun 
+[\c
+.B -a\c
+] [\c
+.BI -e " exitcode"\c
+] [\c
+.BI -k " sig"\c
+] \c
+.BI -t " [[hh:]mm:]secs"\c
+.I " command"\c
+[\c
+.I args\c
+]\c
+.br
+.B hatimerun
+[\c
+.B -l\c
+|\c
+.B -h\c
+|\c
+.B -?\c
+]
+.SH DESCRIPTION
+Executes the given
+.I command
+with the given
+.I args
+with a timeout of
+.I secs
+seconds.
+If the new process doesn't terminate before a timeout 
+exceeds
+.B hatimerun
+sends the process a signal.
+.P
+The
+.I command
+is run in its own process group, the termination signal is sent to this process group.
+.P 
+.I hatimerun
+will always wait for the child to terminate, even if the timeout occurred but
+the child didn't terminate on the signal.
+.P
+The 
+.I hatimerun
+process which waits for the child to exit ignores the following signals:
+TERM, HUP, INT, PIPE, QUIT, USR1 and USR2.
+.TP
+.BI -t " [[hh:]mm:]secs"
+Specifies the time the command has to finish before a signal will be sent. You can specify the timeout value in seconds or hours:minutes:seconds notation.
+.br
+Multiple occurrences of -t are supported. Every time a specified timeout happens a new signal is sent to the child. See EXAMPLES section for more info.
+.TP
+.BI -k " sig"
+Specifies the signal witch will be sent to the process group if a timeout occurs. Multiple occurrences of -k are supported. In case multiple -t arguments are specified every time a new timeout happens the next specified signal will be sent. if there are less -k arguments then -t arguments specified the missing signals are defaulted to SIGKILL. See EXAMPLES section for more info.
+
+Default:
+.B "SIGKILL"\c
+
+.TP
+.BI -e " exitcode"
+Changes the exitcode returned by
+.B hatimerun
+on timeout (if the program ends normally or abnormally after the first signal was sent) to
+.I exitcode
+Multiple occurrences of -e are supported in connection with multiple occurrences of -t.
+
+Default: 
+.B 99
+.TP
+.B -a
+Starts 
+.B hatimerun 
+in the background. The hatimerun program exits immediately. The return code of the executed command is lost.
+.TP
+.B -l
+Prints list of available symbolic signal names on this platform and exits.
+.TP
+.B -h | -?
+Prints a help screen and exits.
+.SH "RETURN VALUE"
+If the command terminates normally before the first timeout happened, 
+On success
+.B hatimerun
+returns the return value of the given
+.I command
+.PP
+After the first timeout happened
+.B hatimerun
+returns the value specified by the respective 
+.I \-e
+option or 
+.B 99
+per default. 
+.B hatimerun
+will always wait for the program to terminate, even if the program terminates normally after the first signal was sent, 
+.B hatimerun
+will return the respective error code as return value and the exit code of the command is lost.
+.SH EXAMPLES
+hatimerun \-t 5 sleep 10 
+.RS 3
+Will kill the sleep command after 5 seconds
+.RE
+.PP
+hatimerun -k TERM -t 5 sleep 10
+.RS 3
+Will send the TERM signal after 5 seconds
+.RE
+.PP
+hatimerun -k TERM -t 5 -e 100 -e 101 -t 1 sleep 10
+.RS 3
+Will send the TERM signal after 5 seconds, and (if the command didn't finish till then) send the KILL signal one second later (about 6 seconds after program start). Will return 100 if the program was terminated by the TERM signal or 101 if it was terminated by the KILL signal.
+.RE
+.PP
+hatimerun -k HUP -t 1 nohup sleep 1000
+.RS 3
+Will send a HUP signal after one second and then wait (potentially forever) until the child terminates.
+.RE
+.PP
+hatimerun -k TERM -t 1:30 sleep 120
+.RS 3
+Will send the TERM signal after one minute and 30 seconds (90 seconds).
+.RE
+
+.SH AUTHOR
+Copyright (c) 2001,2003,2005-2009 by Markus Winand <mws@fatalmind.com>
+.SH SEE ALSO
+.IR halockrun (1)

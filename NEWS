@@ -1,0 +1,4 @@
+V2.00/18-Aug-2007:
+   * More clearly defined the return values of hatimerun.
+   * added to -E option to halockrun so that a distinction between
+     locking problems and other errors is possible.

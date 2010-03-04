@@ -1,0 +1,51 @@
+PROGRAM_NAME="sleep"
+START_COMMAND="sleep 1000000"
+SIGNAL1="TERM"
+SLEEP1="5"
+SIGNAL2="KILL"
+LOCKFILE=/tmp/MyLockFile
+
+case "$1" in
+   'start')
+      ./halockrun -anc -E 42 ${LOCKFILE} ${START_COMMAND}
+      if [ $? -eq 42 ]; then
+         PROGRAM_PID=$(halockrun -t ${LOCKFILE})
+         echo "${PROGRAM_NAME} is already running with PID ${PROGRAM_PID}"
+      fi
+      ;;
+   'stop')
+      PROGRAM_PID=$(halockrun -t ${LOCKFILE})
+      if [ $? -eq 0 ]; then
+         echo "${PROGRAM_NAME} is not running"
+      else
+         echo "Terminating ${PROGRAM_NAME} (${PROGRAM_PID}) with ${SIGNAL1}..."
+         kill -${SIGNAL1} ${PROGRAM_PID}
+         halockrun -cn  ${LOCKFILE} echo "${PROGRAM_NAME} (${PROGRAM_PID}) terminated"
+         if [ $? -eq 99 ]; then
+            sleep ${SLEEP1}
+            echo "Terminating ${PROGRAM_NAME} (${PROGRAM_PID}) with ${SIGNAL2}..."
+            kill -${SIGNAL2} ${PROGRAM_PID}
+            halockrun -cn  ${LOCKFILE} echo "${PROGRAM_NAME} (${PROGRAM_PID}) terminated"
+            if [ $? -eq 99 ]; then
+               sleep ${SLEEP1}
+               halockrun -cn  ${LOCKFILE} echo "${PROGRAM_NAME} (${PROGRAM_PID}) terminated"
+               if [ $? -eq 99 ]; then
+                  echo "${PRGORAM_NAME} (${PROGRAM_PID}) has not terminated."
+               fi
+            fi
+         fi
+      fi
+      ;;
+   'status')
+      PROGRAM_PID=$(halockrun -t ${LOCKFILE})
+      if [ $? = 0 ]; then
+         echo "${PROGRAM_NAME} is not running"
+      else
+         echo "${PROGRAM_NAME} is running with PID ${PROGRAM_PID}"
+      fi
+      ;;
+   *)
+      echo "usage: $0 start|stop|status"
+      ;;
+esac
+

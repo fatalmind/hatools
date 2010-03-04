@@ -1,0 +1,61 @@
+HA-Tools - High Availability Toolkid for shell scripting
+
+Table of Contents
+=================
+
+1. Installation
+2. Obtaining HA-Tools
+3. How to report bugs
+4. Copyright
+
+
+1. Installation
+---------------
+
+See the INSTALL file for detailed instructions.
+
+In most cases the following steps should do the installation:
+
+ # ./configure
+ # make
+ # make install
+
+
+2. Obtaining HA-Tools
+--------------------
+
+You can download the most recent version of the HA-Tools at
+
+http://www.fatalmind.com/programs/hatools/
+
+
+3. How to report bugs
+---------------------
+
+If you have found a bug please send with the following information to
+mws@fatalmind.com:
+
+ -> bug description
+ -> system description (hardware and software, e.g. uname -a)
+ -> the "config.log" file
+
+
+4. Copyright 
+-------------
+
+HA-Tools (c) 2001,2003,2005-2009 by Markus Winand <mws@fatalmind.com>
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
