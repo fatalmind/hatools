@@ -40,6 +40,7 @@ char *cmdname = NULL;
 
 /* configuration */
 int async = 0;
+int verbose = 0;
 
 void notifyAsyncParent(int wpip, char val) {
 	if (async) {
@@ -73,6 +74,9 @@ int mk_child(int fork_mode, int wpip, char *argv[])
 	case 0: /* fork() succeeded */
 		/* kiddie */
 
+		if (verbose >= 2) {
+			printf("%s: Going to execute '%s'\n", cmdname, argv[0]);
+		}
 		execvp(argv[0], argv);
 
 		notifyAsyncParent(wpip, FAIL_EXITCODE);
@@ -121,9 +125,9 @@ int mk_child(int fork_mode, int wpip, char *argv[])
  */
 
 void usage() {
-	fprintf(stderr, "usage: %s [-ancf] [-e exitcode] [-E nexitcode] "
+	fprintf(stderr, "usage: %s [-ancfv] [-e exitcode] [-E nexitcode] "
 			"lockfile command [args]\n", cmdname);
-	fprintf(stderr, "       %s -t|-N [-nc] [-e exitcode] [-E nexitcode] "
+	fprintf(stderr, "       %s -t|-N [-ncv] [-e exitcode] [-E nexitcode] "
 			"lockfile\n", cmdname);
 	fprintf(stderr, "       %s -h|-?\n", cmdname);
 	exit(FAIL_EXITCODE);
@@ -131,8 +135,8 @@ void usage() {
 
 void longusage() {
 	fprintf(stderr, 
-"usage: %s [-ancf] [-e exitcode] [-E nexitcode] lockfile command [args]\n"
-"       %s -t|-N [-nc] [-e exitcode] [-E nexitcode] lockfile\n"
+"usage: %s [-ancfv] [-e exitcode] [-E nexitcode] lockfile command [args]\n"
+"       %s -t|-N [-ncv] [-e exitcode] [-E nexitcode] lockfile\n"
 "       %s -h|-?\n"
 "Options:\n",
 cmdname, cmdname, cmdname);
@@ -148,7 +152,8 @@ cmdname, cmdname, cmdname);
 "  -f            Fork mode. Runs %s and the command in differnt processes\n"
 "  -t            Test mode. %s will check the lockfile and report the process\n"
 "                who holds the lock if it's locked\n"
-"  -N            Noop mode. Doesn't execute any command.\n\n",
+"  -N            Noop mode. Doesn't execute any command.\n"
+"  -v            Verbose mode. Multiple occurance increase verbosity.\n\n",
 cmdname, cmdname);
         fprintf(stderr,   
 "Version:\n"
@@ -196,7 +201,7 @@ char **cmd_line(int argc, char *argv[]) {
 	setenv("POSIXLY_CORRECT", "1", 0);
 #endif
 
-	while ((ch = getopt(argc,argv, "ance:E:h?ftN")) != -1) {
+	while ((ch = getopt(argc,argv, "ance:E:h?ftNv")) != -1) {
 		switch (ch) {
 		case 'a':
 			async = 1;
@@ -235,6 +240,9 @@ char **cmd_line(int argc, char *argv[]) {
 			break;
 		case 'f':
 			fork_mode = 1;
+			break;
+		case 'v':
+			verbose++;
 			break;
 		default:
 			usage();
@@ -414,6 +422,9 @@ int main(int argc, char *argv[]) {
 	flock_struct.l_start = 0;
 	flock_struct.l_len = 0;
 
+	if (verbose >= 2) {
+		printf("%s: Going to aquire lock\n", cmdname);
+	}
 	if (fcntl(lockfd, lockmode, &flock_struct) == -1) {
 		/* POSIX allows eigther EAGAIN or EACCES to say it's locked 
 		  if the file is really not accessible, the open call above
@@ -421,6 +432,9 @@ int main(int argc, char *argv[]) {
 		if ((lockmode == F_SETLK) && (errno == EAGAIN || errno == EACCES)) {
 			/* nonblocking failed */
 			notifyAsyncParent(pip[1], FAIL_EXITCODE_NB);
+			if (verbose) {
+				printf("%s: Lockfile '%s' busy -- command not started\n", cmdname, lockfile);
+			}
 			exit(FAIL_EXITCODE_NB);
 		}
 		if (lockmode == F_GETLK) {
@@ -430,6 +444,10 @@ int main(int argc, char *argv[]) {
 		}
 		error("Can't get exclusive lock on \"%s\": %s\n",
 			lockfile, strerror(errno));
+	}
+
+	if (verbose >= 2) {
+		printf("%s: Lock acquired\n", cmdname);
 	}
 
 	/*

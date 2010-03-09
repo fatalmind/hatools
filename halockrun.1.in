@@ -1,10 +1,10 @@
 .TH halockrun 1 "@DATE@" "V@VERSION@" "hatools"
 .SH NAME
-halockrun \- Run command while hold exclusive lock on file.
+halockrun \- Run command while holding exclusive lock on file.
 .SH SYNOPSIS
 .B halockrun 
 [\c
-.B -ancf\c
+.B -ancfv\c
 ] [\c
 .BI -e " exitcode"\c
 ] [\c
@@ -25,31 +25,34 @@ halockrun \- Run command while hold exclusive lock on file.
 ]
 .I lockfile
 .SH DESCRIPTION
-Executes the given
+Executes 
 .I command
-with the given
+with
 .I args
 while holding an exclusive lock on the file
-.I lockfile 
-\. If the file is already locked by another Process
-.B halockrun
-will wait until the lock was released and execute the
+.IR lockfile .
+If the file is locked by another process,
+.BR halockrun
+.R will wait until the lock becomes available and executes the
 .I command
-afterwards.
+then.
 
-This is useful to serialize command execution from a shell script.
-
-.B halockrun
-is implemented using locks from the operating system which makes it very reliable
-and not vulnerable to dead locks.
+.B halockrun 
+is often used to avoid cron job overruns. 
 
 .B halockrun
-can also be used to implement start/stop script's without having pid-files.
+uses operating system locks (POSIX --
+.BR fcntl (2))
+that makes it very resistant to stale locks.
 
 .TP 
 .B -a
-Async mode. Starts the command in the background. The hatimerun program
-exits immediately. The returncode of the executed command is lost.
+Async mode. 
+Starts 
+.I command
+in the background. 
+.B halockrun
+itself exits immediately. The exitcode of the executed command is lost.
 .TP
 .B -c
 Create mode. Creates the
@@ -65,99 +68,91 @@ Changes the exitcode returned by
 .B halockrun
 on fail to
 .I exitcode
-
-The default value for this option is
-.B 99
+The default value is 99.
 
 .TP
 .BI -E " nexitcode"
-Changes the exitcode returned by
+Changes the "lock busy" exitcode returned by
 .B halockrun
-in non-blocking or testing mode if the lock can't be obtained to
-.I nexitcode
 
 The default value for this option is
 .I exitcode
-in non-blocking mode and
-.B 1
-in testing mode and noop mode.
+in non-blocking mode and 1 in testing-, and noop-mode.
 
 .TP
 .B -n
-Non-blocking mode. Exits with
+Non-blocking mode. Exits immediately with
 .I nexitcode
 if the 
 .I lockfile
-is locked by another Process.
+is locked by another process.
 .TP
 .B -f
 Fork mode. 
 The normal behavior of 
 .B halockrun 
 is to get the lock and call 
-.IR execvp (2) 
-to execute the command specified. If this option is specified, 
+.BR execvp (2) 
+to execute the command specified. If fork mode, 
 .B halockrun 
 will do a 
-.IR fork (2)
-and run the command in its own process. In this case the parent (
+.BR fork (2)
+and run the command in its own process. In this case the
+.RB parent-- halockrun " itself--holds"
+the lock on 
+.IR lockfile . 
+The split in two processes opens the risk that the parent 
+.BR halockrun "--that holds the lock--dies"
+and leaves 
+.I command 
+unprotected.
+To minimize this risk, 
 .B halockrun
-) itself holds the lock on the 
-.I lockfile. 
-This may cause some troubles if the
-halockrun process dies and the child is not finished yet, in that case
-the child would not be protected. To minimize this risk the halockrun
-process holding the lock ignores the following signals: TERM, HUP, INT,
-PIPE, QUIT, USR1 and USR2.
+ignores the following signals: TERM, HUP, INT,
+PIPE, QUIT, USR1, and USR2.
 
-This option is only useful to make sure that the command does not see any
+This option is useful to make sure that the command does not see any
 difference when running under protection of 
-.B halockrun.
-The only thing which
-is different (currently) when not running with the -f option is that there
-is another open file-handle which is connected to the 
+.BR halockrun .
+In other words, the fork mode makes sure that the open file handle to
 .I lockfile 
-and holds the lock.
+is not visible to 
+.IR command .
 
-This option is new to version V0.99.08, before this version 
+Fork mode has also influence on the
+.I -t
+switch, because that will not return the PID of
+.I command
+but of the parent
+.B halockrun
+process.
+
+This option is new to version V0.99.08, prior this version 
 .B halockrun 
-has
-always made a fork. The default has changed because it is much more important
-to make sure to not lose the lock by accident then to make 
-.B halockrun 
-100% transparent.
+has always 
+.BR fork "(2)ed."
+The default was changed because reliability 
+is more important than transparency--in that case.
 
 If you are in doubt about this option: don't use it.
 .TP
 .B -t
 Test mode.
-Can be used to retrieve the PID of the process currently holding the lock (if any), 
-compare also 
+Checks if  
+.I lockfile 
+is currently busy, and prints the PID of the process that 
+holds the lock--if any.
+See also 
 .B -N
 for that purpose.
-If you specify this option
-.B halockrun 
-will check if the file is locked and return 0 if it is not locked or 
+The exitcode is 0 if the lock is free or
 .I nexitcode
-if it is locked and will print the pid of the process which holds the lock to stdout.
+if it is busy. Any other error--such as "lockfile not found"--will result in
+.IR exitcode .
+
 Regardless of the lock status,
 .B halockrun
 will not run any command.
-
-If an error occurs (e.g. because 
-.I lockfile 
-doesn't exists) 
-.I exitcode
-will be returned.
-
-Please note that if another 
-.B halockrun 
-is currently holing the lock, you will receive the pid of the halockrun process which holds
-the lock. This is usually the program which you run under protection of
-.B halockrun
-but might be the halockrun process itself if you have specified the
-.B -f
-flag.
 
 When the
 .B -t
@@ -171,62 +166,58 @@ are meaningless and will be ignored if they are specified.
 .TP
 .B -N
 No-op mode.
-Can be used to check if 
-.I lockfile 
-is currently locked. In difference to the 
-.B -t 
-flag, the PID of the process will not be returned. Using the 
+The 
 .B -N 
-flag is semantically equivalent to running:
+flag is semantically equivalent to:
+.nf
 
-halockrun lockfile /bin/true
+   halockrun lockfile /bin/true
 
-and the implementation is more portable then the 
+.fi
+It supplements the 
 .B -t
-implementation.
+switch because it blocks. It can be combined with the
+.B -n
+option to change the blocking behavior.
+However, it doesn't print the PID of the the lock holder if it is busy.
 
-If you just need to know if the lockfile is currently busy but don't need the PID of the lock holder, prefer
+The 
 .B -N
-over
+switch is more portable and used to synchronize with a running process. The
 .B -t
-for portability reasons.
-
-This option can be combined with the
-.B -n
-option to not block until the lockfile becomes available so that 
-.B halockrun
-will behave like in test-mode (but not print anything to stdout). Using
-.B -N 
-without 
-.B -n
-can be used to cause
-.B halockrun
-to block until the lockfile becomes available.
+switch is used to obtain the PID of the running process.
 
 When the
-.B -t
-flag is specified the flags
+.B -N
+flag is specified, the
 .B -a 
 and
 .B -f
-are meaningless and will be ignored if they are specified.
+flags are meaningless and will be ignored if they are specified.
 
+.TP
+.B -v[v]
+Verbose mode and more verbose mode--almost debug mode.
 
-
-.PP
 .SH "RETURN VALUE"
-On success (if the command was executed)
-.B halockrun
-returns the return value of the given
+On success, if 
 .I command 
-or 0 if 
+was executed,
+.B halockrun
+returns the return value of
+.IR command .
+
+If 
 .B -t
 or
 .B -N 
-was used.
+was used, 0 is returned if the lock is not currently busy.
 .PP
-On fail (e.g. if the lockfile doesn't exist or the command can't be executed)
-.B halockrun
+On failure--if 
+.I lockfile 
+doesn't exist or 
+.I command 
+.RB "can't be executed--" halockrun
 returns the value specified by the
 .B \-e
 option.
