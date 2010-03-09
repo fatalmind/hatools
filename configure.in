@@ -3,6 +3,7 @@ AC_INIT
 AC_LANG(C)
 AC_CONFIG_SRCDIR([hatimerun.c])
 AM_INIT_AUTOMAKE(hatools, "2.13")
+AC_SUBST(DATE, "2010-03-09")
 AC_CONFIG_HEADERS([config.h])
 
 dnl Checks for programs.

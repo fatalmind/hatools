@@ -1,5 +1,4 @@
-.\" $Id$
-.TH hatimerun 1 "$Date$" "V@VERSION@" "HA-Tools"
+.TH hatimerun 1 "@DATE@" "V@VERSION@" "hatools"
 .SH NAME
 hatimerun \- Run command with a timeout.
 .SH SYNOPSIS
@@ -128,6 +127,6 @@ Will send the TERM signal after one minute and 30 seconds (90 seconds).
 .RE
 
 .SH AUTHOR
-Copyright (c) 2001,2003,2005-2009 by Markus Winand <mws@fatalmind.com>
+Copyright (c) 2001,2003,2005-2010 by Markus Winand <mws@fatalmind.com>
 .SH SEE ALSO
 .IR halockrun (1)

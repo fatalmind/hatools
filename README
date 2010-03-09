@@ -1,10 +1,10 @@
-HA-Tools - High Availability Toolkid for shell scripting
+hatools - High Availability Toolkid for shell scripting
 
 Table of Contents
 =================
 
 1. Installation
-2. Obtaining HA-Tools
+2. Obtaining hatools
 3. How to report bugs
 4. Copyright
 
@@ -21,12 +21,12 @@ In most cases the following steps should do the installation:
  # make install
 
 
-2. Obtaining HA-Tools
+2. Obtaining hatools
 --------------------
 
-You can download the most recent version of the HA-Tools at
+You can download the most recent version of the hatools at
 
-http://www.fatalmind.com/programs/hatools/
+http://www.fatalmind.com/software/hatools/
 
 
 3. How to report bugs
@@ -43,7 +43,7 @@ mws@fatalmind.com:
 4. Copyright 
 -------------
 
-HA-Tools (c) 2001,2003,2005-2009 by Markus Winand <mws@fatalmind.com>
+hatools (c) 2001,2003,2005-2010 by Markus Winand <mws@fatalmind.com>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
