@@ -89,6 +89,16 @@ int signumber(const char *signame) {
 
 #ifndef HAVE_SYS_SIGNAME
 #define NUMBER_OF_SIGNALS sys_nsigname2
+
+int getSigIndex(int signal) {
+	int index = 0;
+	while (sys_signumber2[index] != signal && sys_signumber2[index] > 0) {
+		++index;
+	}
+	return sys_signumber2[index] > 0 ? index : 0;
+}
+
+
 #else
 #define NUMBER_OF_SIGNALS NSIG
 #endif
@@ -108,7 +118,7 @@ void get_sig_nameUC(const int signal, char* dest, const int mxlength) {
 
 #ifndef HAVE_SYS_SIGNAME
 		/* Offset: -1, because sys_signame2 starts with signal "1" (HUP) at index 0 */
-		const char* const signame = sys_signame2[signal - 1];
+		const char* const signame = sys_signame2[getSigIndex(signal)];
 #else
 		const char* const signame = sys_signame[signal];
 #endif
