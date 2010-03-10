@@ -75,7 +75,9 @@ int mk_child(int fork_mode, int wpip, char *argv[])
 		/* kiddie */
 
 		if (verbose >= 2) {
-			printf("%s: Going to execute '%s'\n", cmdname, argv[0]);
+			printf("%s: Going to execute '", cmdname);
+			print_argv(stdout, argv);
+			fputs("'\n", stdout);
 		}
 		execvp(argv[0], argv);
 

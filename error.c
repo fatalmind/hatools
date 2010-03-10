@@ -36,3 +36,14 @@ void error(char *fmtstr, ...) {
 	exit (FAIL_EXITCODE[0]);
 }
 
+void print_argv(FILE *stream, char* argv[]) {
+	int i = 0;
+	while (argv[i] != NULL) {
+		if (i > 0) {
+			fputc(' ', stream);
+		}
+		fputs(argv[i], stream);
+		fflush(stream);
+		++i;
+	}
+}

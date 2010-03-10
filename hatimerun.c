@@ -44,6 +44,7 @@ extern int optind;
 int debug = 1;
 char *cmdname = NULL;
 int async = 0;
+int verbose = 0;
 
 /* _idx variables are the indexes used during parsing, */
 /* as well as during alarming. */
@@ -106,6 +107,7 @@ int mk_child(char *argv[], int wpip)
 		int childstatus;
 		struct sigaction ign,alrt;
 		int timeoutsprocessed_idx = timeouthappend_idx;
+		int starttime = time(NULL);
 
 		ign.sa_handler = SIG_IGN;
 		sigemptyset(&ign.sa_mask);
@@ -129,6 +131,14 @@ int mk_child(char *argv[], int wpip)
 		do {
 			ret = waitpid(childpid, &childstatus, 0);
 			if (ret == -1 && errno == EINTR && timeouthappend_idx > timeoutsprocessed_idx) {
+				if (verbose >= 2) {
+					char signame[65];
+					get_sig_nameUC(term_signal[timeoutsprocessed_idx], signame, 64);
+					fprintf(stdout, "%s: Timout #%d after %lds: sending signal %s to process group -%d ("
+						, cmdname, timeouthappend_idx, time(NULL) - starttime, signame, childpid);
+					print_argv(stdout, argv);
+					fputs(")\n", stdout);
+				}
 				/* kill it*/
 				kill(-childpid, term_signal[timeoutsprocessed_idx]); /* happend -1 since it is not yet processed */
 				childcode = FAIL_EXITCODE[timeoutsprocessed_idx];
@@ -139,8 +149,34 @@ int mk_child(char *argv[], int wpip)
 			}
 		} while (ret == -1 && errno == EINTR );
 
+		if (verbose && timeouthappend_idx) {
+			/* non-regular termination (at least after timeout) */
+			if (WIFEXITED(childstatus)) {
+				printf("%s: process %d terminated with status %d after %lds (", cmdname, childpid, WEXITSTATUS(childstatus), time(NULL) - starttime);
+				print_argv(stdout, argv);
+				fputs(")\n", stdout);
+			} else if (WIFSIGNALED(childstatus)) {
+				char signame[65];
+				get_sig_nameUC(WTERMSIG(childstatus), signame, 64);
+				printf("%s: process %d terminated on signal %s after %lds (", cmdname, childpid, signame, time(NULL) - starttime);
+				print_argv(stdout, argv);
+				fputs(")\n", stdout);
+			} else {
+				/* is that possible? */
+				printf("%s: process %d terminated after %lds (", cmdname, childpid, time(NULL) - starttime);
+				print_argv(stdout, argv);
+				fputs(")\n", stdout);
+			}
+		}
+
 		if ((timeouthappend_idx == 0) && WIFEXITED(childstatus)) {
+			/* a regular termination prior any timeout */
 			childcode = WEXITSTATUS(childstatus);
+			if (verbose >= 2) {
+				printf("%s: process %d terminated with status %d after %lds (", cmdname, childpid, childcode, time(NULL) - starttime);
+				print_argv(stdout, argv);
+				fputs(")\n", stdout);
+			}
 		} /* else? already set above */
 
 		} /* block for local vairables; */
@@ -160,14 +196,14 @@ void nop(int i) {
 }
 
 void usage() {
-	fprintf(stderr, "usage: %s [-a] [-e exitcode] [-k signame] " 
+	fprintf(stderr, "usage: %s [-av] [-e exitcode] [-k signame] " 
 		"-t secs command [args]\n", cmdname);
 	exit (FAIL_EXITCODE[0]);
 }
 
 void longusage() {
 	fprintf(stderr, 
-"usage: %s [-a] [-e exitcode] [-k signame] -t [[hh:]mm:]secs command [args]\n"
+"usage: %s [-av] [-e exitcode] [-k signame] -t [[hh:]mm:]secs command [args]\n"
 "       %s [-l|-h|-?]\n"
 "Options:\n"
 "  -a           Async mode. Starts %s in the background\n"
@@ -178,7 +214,8 @@ void longusage() {
 "  -t time      Specifies the timeout.\n"
 "               You can specify the number of seconds or hours/minutes/seconds\n"
 "               notation seperated by colon (e.g. 1:30:0 means 1 hour, 30 minutes)\n"
-"  -l           Print list of available signals on this platform and exit.\n");
+"  -l           Print list of available signals on this platform and exit.\n"
+"  -v           Verbose mode. Multiple occurance increase verbosity.\n");
 	fprintf(stderr, 
 "Version:\n"
 "  V%s\n" 
@@ -239,7 +276,7 @@ char **cmd_line(int argc, char *argv[]) {
 	setenv("POSIXLY_CORRECT", "1", 0);
 #endif
 
-	while ((ch = getopt(argc, argv, "ae:k:t:lh?")) != -1) {
+	while ((ch = getopt(argc, argv, "ae:k:t:lh?v")) != -1) {
 		switch(ch) {
 		case 'a':
 			async = 1;
@@ -263,7 +300,7 @@ char **cmd_line(int argc, char *argv[]) {
 			} else {
 				/* check for signal name*/
 				hlp = signumber(optarg);
-				if (hlp == 0) {
+				if (hlp < 0) {
 					error("unknown signal \"%s\"\n",optarg);
 				}
 				term_signal[term_signal_idx++] = hlp;
@@ -282,6 +319,9 @@ char **cmd_line(int argc, char *argv[]) {
 		case '?':
 		case 'h':
 			longusage();
+			break;
+		case 'v':
+			verbose++;
 			break;
 		}
 	}

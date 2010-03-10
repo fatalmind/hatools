@@ -1,3 +1,14 @@
+V2.14/???????????:
+   * Added verbose (-v) options to hatimerun and halockrun.
+     The verbose options help in diagnosing issues and allow simpler
+     error reporting.
+     The hatimerun -v option writes a message if the execution took
+     longer then the first timeout.
+     This feature was borrowed from Steve Friedl's lockrun.c
+     implementation at http://unixwiz.net/tools/lockrun.html
+     In combination with -k NONE, hatimerun behaves very similar to
+     lockrun --max-time.
+
 V2.13/04-Dec-2009:
    * An environment manipulation problem in hatimerun and halockrun was 
      fixed.
@@ -5,7 +16,7 @@ V2.13/04-Dec-2009:
      proper command line parsing. The environment was not reverted before
      the protected command was started and might have caused improper
      command line parsing in the executed command.
-     The fix makes sure the environment is reverted to it's original
+     The fix makes sure the environment is reverted to its original
      state before the actual command is started.
      Again, Thx to Vallo Kallaste for the report and the retest.
 

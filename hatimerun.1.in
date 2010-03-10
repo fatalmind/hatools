@@ -4,7 +4,7 @@ hatimerun \- Run command with a timeout.
 .SH SYNOPSIS
 .B hatimerun 
 [\c
-.B -a\c
+.B -av\c
 ] [\c
 .BI -e " exitcode"\c
 ] [\c
@@ -25,38 +25,73 @@ hatimerun \- Run command with a timeout.
 .B -?\c
 ]
 .SH DESCRIPTION
-Executes the given
-.I command
-with the given
-.I args
+Executes
+.I command args
 with a timeout of
-.I secs
+.I [[hh:]mm:]secs
 seconds.
-If the new process doesn't terminate before a timeout 
+If 
+.I command
+does not terminate before the timeout 
 exceeds
 .B hatimerun
-sends the process a signal.
+sends a signal to
+.IR command .
 .P
-The
-.I command
-is run in its own process group, the termination signal is sent to this process group.
+.I Command
+is started in its own process group; the signal is sent to the process group.
 .P 
-.I hatimerun
-will always wait for the child to terminate, even if the timeout occurred but
-the child didn't terminate on the signal.
+.B hatimerun
+itself will not terminate while
+.I command
+is running--not even if the timeout occurred.
+.B hatimerun
+terminates when
+.I command
+terminates.
+.B hatimerun
+can be configured to send a sequence of different singals to
+.I command
+to allow graceful termiation but allow a hard timeout with the KILL signal in the end. See 
+.B EXAMPLES
+below.
 .P
-The 
-.I hatimerun
-process which waits for the child to exit ignores the following signals:
+.B hatimerun
+itself ignores the following signals to avoid premature termiantion:
 TERM, HUP, INT, PIPE, QUIT, USR1 and USR2.
 .TP
 .BI -t " [[hh:]mm:]secs"
-Specifies the time the command has to finish before a signal will be sent. You can specify the timeout value in seconds or hours:minutes:seconds notation.
+Timeout.
+Specifies the time when the signal is sent, if
+.I command
+did not terminate before.
 .br
-Multiple occurrences of -t are supported. Every time a specified timeout happens a new signal is sent to the child. See EXAMPLES section for more info.
+Multiple occurrences of 
+.B -t 
+are supported. Every time a specified timeout happens a new signal is sent to the child. See 
+.BR EXAMPLES .
 .TP
 .BI -k " sig"
-Specifies the signal witch will be sent to the process group if a timeout occurs. Multiple occurrences of -k are supported. In case multiple -t arguments are specified every time a new timeout happens the next specified signal will be sent. if there are less -k arguments then -t arguments specified the missing signals are defaulted to SIGKILL. See EXAMPLES section for more info.
+Specifies the signal that will be sent on timeout.
+.br
+Multiple occurrences of 
+.B -k 
+are supported to configure different signals for differnt timeouts. That is, the second
+.B -k
+signal will be sent on the second timeout, and so on.
+In case there are less 
+.B -k 
+arguments than timeouts 
+.RB ( -t ),
+.B hatimerun
+sends SIGKILL at the additional timeouts. See
+.B EXAMPLES
+below.
+.br
+Symbolic as well as numeric signal specifications are accepted. The "magic" signal name
+.B NONE
+will not send a signal, useful in combination with
+.BR -v .
 
 Default:
 .B "SIGKILL"\c
@@ -65,9 +100,13 @@ Default:
 .BI -e " exitcode"
 Changes the exitcode returned by
 .B hatimerun
-on timeout (if the program ends normally or abnormally after the first signal was sent) to
-.I exitcode
-Multiple occurrences of -e are supported in connection with multiple occurrences of -t.
+on timeout. This code is used as soon as the first timeout has passed, irrespective of the exit status of
+.IR command .
+.br
+Multiple occurrences of 
+.B -e 
+are supported in connection with multiple occurrences of 
+.BR -t .
 
 Default: 
 .B 99
@@ -75,10 +114,27 @@ Default:
 .B -a
 Starts 
 .B hatimerun 
-in the background. The hatimerun program exits immediately. The return code of the executed command is lost.
+in the background.
+.B hatimerun 
+itself exits immediately. The exit code of 
+.I command 
+is lost.
 .TP
 .B -l
 Prints list of available symbolic signal names on this platform and exits.
+.TP
+.B -v
+Verbose mode. Will print a message, containing the runtime, if the first timeout has passed before
+.I command
+terminated. Useful in cron to have an e-mail sent if a timeout has passed by.
+.br
+This option can be paired with the
+.B -k NONE
+switch to just print an error message on timeout, but don't kill 
+.IR command .
+.TP
+.B -vv
+More verbose mode--almost debug mode. Will write a status message on every timeout.
 .TP
 .B -h | -?
 Prints a help screen and exits.

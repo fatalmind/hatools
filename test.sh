@@ -212,7 +212,7 @@ if [ $E -ne 99 ]; then
 fi
 echo "test 21 ok"
 
-./hatimerun -e 99 -e 100 -k INT -t 1 -t 2 ./printsignal 2 >/dev/null
+./hatimerun -vv -e 99 -e 100 -k INT -t 1 -t 2 ./printsignal 2 >/dev/null
 E=$?
 if [ $E -ne 99 ]; then
 	echo "fail 22: returned $E on error (expected 99)"
@@ -228,7 +228,7 @@ if [ $E -ne 100 ]; then
 fi
 echo "test 23 ok"
 
-./halockrun -anc ${LOCKFILE1} ./printsignal 10 >/dev/null
+./halockrun -ancvv ${LOCKFILE1} ./printsignal 10 >/dev/null
 ./halockrun -t ${LOCKFILE1} >/dev/null
 RS=$?
 
@@ -278,6 +278,13 @@ if [ "$RV" != ">VERY_CORRECT<" ]; then
 fi
 echo "test 28 ok"
 
+
+./hatimerun -l 2>/dev/null
+E=$?
+if [ $E -ne 99 ]; then
+	echo "fail 29: hatimerun -l returned $E, expected 99."
+	exit 29;
+fi
 
 
 

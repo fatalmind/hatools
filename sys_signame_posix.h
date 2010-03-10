@@ -72,3 +72,4 @@ const int sys_signumber2[] =
 };
 
 
+const unsigned int sys_nsigname2 = 20;
