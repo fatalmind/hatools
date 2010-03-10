@@ -5,7 +5,7 @@
 # (and submit your improvements)
 
 SHELL=/bin/ksh
-# fun enough, bash v2.05 @ OS 10.4 (at least)
+# funny enough, bash v2.05 @ OS 10.4 (at least)
 # manipulates POSIXLY_CORRECT: in case it it set, it is reset to "y".
 # this makes test 11 and co failing.
 
@@ -49,7 +49,7 @@ if [ -z "${RV}" ]; then
 fi
 echo "test  4 ok"
 
-if [ ${RV} == 0 ]; then
+if [ ${RV} -eq 0 ]; then
 	echo "fail 5: returned zero on locked file"
 	exit 5
 fi
@@ -249,11 +249,11 @@ fi
 echo "test 25 ok"
 
 while read blah1 blah2 sig blah3 sec moreblah; do
-	if [ "x$sig" == "xis" -o "x$sig" == "xseconds" ]; then
-		/bin/true
+	if [ "x$sig" = "xis" -o "x$sig" = "xseconds" ]; then
+		true
 	else
 		if [ "$sec" -ge 59 -a "$sec" -le 63 ]; then
-			/bin/true
+			true
 		else
 			echo "fail 26: time mismatch ($sec)"
 			exit 26
