@@ -238,7 +238,57 @@ returns the values specified by the
 .B \-E
 option.
 
+.SH EXAMPLES
+The most prominent use of
+.B halockrun
+is to protect from cron overrun. A typical 5 minutes cron job like that
+
+  */5 * * * * /path/script
+
+would be transformed to
+
+  */5 * * * * 
+.B halockrun -cn /path/lock 
+/path/script
+
+This will prevent multiple parallel instances of 
+.IR /path/script .
+Additionally, you might use
+.I hatimerun
+to kill 
+.I script
+when it takes longer then 5 minutes:
+
+  */5 * * * * 
+.I hatimerun -t 5:00 
+.B halockrun -cn /path/lock
+/path/script
+
+You can configure
+.I hatimerun
+for many different actions, please refer to the
+.IR hatimerun (1)
+manpage for the full documentation.
+
+.SH COMPATIBILITY
+
+.B halockrun
+uses
+.BR fcntl (2)
+advisory locking. Similar tools that use a different locking appraoch like
+.IR flock (2)
+of
+.IR lockf (3)
+may or may not work together.
+
+For example, locks placed by 
+.IR flock (2)
+on Linux are independend from locks placed by
+.IR fcntl (2)
+on the same system. That means, if you mix those two methods, they don't lock each other.
 .SH AUTHOR
 Copyright (c) 2001,2003,2005-2010 by Markus Winand <mws@fatalmind.com>
 .SH SEE ALSO
 .IR hatimerun (1)
+
+.I http://www.fatalmind.com/software/hatools/
